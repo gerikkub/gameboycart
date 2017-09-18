@@ -4,15 +4,37 @@ DEVICE = libraries/CMSIS/device/ST/STM32F4xx
 CMSIS = libraries/CMSIS
 LIBRARIES = libraries/STM32F4xx_HAL_Driver
 SYSTEM = system
-
-SOURCES += main.c
+SOURCE = src
+GAMES  = games
 
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_rcc.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_rcc_ex.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_pwr.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_pwr_ex.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_flash.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_flash_ex.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal.c
 
 SOURCES += $(SYSTEM)/startup_stm32f427xx.s \
 		   $(SYSTEM)/system_stm32f4xx.c
+
+SOURCES += $(SOURCE)/main.c \
+		   $(SOURCE)/bsp.c \
+           $(SOURCE)/run_cycle.s
+
+SOURCES += $(SOURCE)/drivers/rcc.c \
+		   $(SOURCE)/drivers/gpio.c \
+		   $(SOURCE)/drivers/exti.c
+
+SOURCES += $(SOURCE)/rtt/SEGGER_RTT.c
+SOURCES += $(SOURCE)/rtt/SEGGER_RTT_printf.c
+SOURCES += $(SOURCE)/rtt/rtt.c
+
+SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
+
+SOURCES += $(GAMES)/Tetris.gb.c
 
 OBJECTS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SOURCES))))
 
@@ -20,6 +42,9 @@ INCLUDES += -I$(DEVICE)/include \
 			-I$(LIBRARIES)/include \
 			-I$(CMSIS)/include \
 			-I$(SYSTEM) \
+			-I$(SOURCE)/rtt \
+			-I$(SOURCE)/drivers \
+			-I$(GAMES) \
 			-I.
 
 ELF = $(BUILDDIR)/program.elf
@@ -34,7 +59,7 @@ OBJCOPY = arm-none-eabi-objcopy
 
 WARNINGS = -Wall -Werror -Wno-unused-function
 	
-CFLAGS  = -O0 -g \
+CFLAGS  = -Ofast -g \
    -mcpu=cortex-m4 -mthumb \
    -mfloat-abi=soft \
    $(INCLUDES) -DUSE_STDPERIPH_DRIVER \
