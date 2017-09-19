@@ -50,6 +50,10 @@ run_cycle:
     
     push {r0-r12, lr}
 
+    ldr r3, =GPIOB
+
+    ldr r4, =GPIOC
+
     ldr r5, =gameData
 
     ldr r6, =GPIOB
@@ -75,11 +79,6 @@ run_cycle:
     
 run_cycle_loop:
 
-    #.rept 100
-    #nop
-    #.endr
-    
-
     #ldr r0, =CYCCNT
     #ldr lr, [r0]
 
@@ -99,77 +98,67 @@ run_cycle_loop:
     # r0: [GPIOA->IDR]
     # r1: [GPIOD->IDR]
     # r2: [GPIOC->DIR]
-    ldr r2, [r10]
+    ldr r0, [r10]
 
-    ands r3, r2, $0x2
+    ands r1, r0, $0x2
 
     # Branch if Z==1 (Addr[15] is set)
-    bne run_cycle_data_z
+    beq run_cycle_loop_cont
+
+    b run_cycle_data_z
+
+run_cycle_loop_cont:
 
     # r3: addr_pins_lower
     # r4: temp
 
-    ldr r0, [r8]
-    ldr r1, [r11]
+    ldr r1, [r8]
 
-    rbit r2, r2
-    lsr r2, r2, $28
-    bfi r3, r2, $13, $3
+    rbit r0, r0
+    lsr r0, r0, $28
+    bfi r1, r0, $13, $3
 
+    ldr r0, [r11]
 
-    bfi r3, r0, $0, $4
-    lsr r0, r0, $6
-    bfi r3, r0, $6, $7
+    lsr r0, r0, $4
+    bfi r1, r0, $4, $2
 
-    lsr r1, r1, $4
-    bfi r3, r1, $4, $2
-
-    uxth r3, r3
+    uxth r1, r1
 
     # r0: data value
-    ldrb r0, [r5, r3]
+    ldrb r0, [r5, r1]
 
-    # r1: temp values for setting GPIOB->ODR
-    # r2: temp values for setting GPIOC->ODR
-    # r3: And mask
-    #ldr r1, [r6]
+    ldr r1, =GPIOBMODER
+    str r1, [r3]
 
-    #mvn r3, $0x0380
-    #and r1, r1, r3
-
-    #ldr r2, [r7]
-    #mvn r3, $0x00F1
-    #and r2, r2, r3
+    ldr r1, =GPIOCMODER
+    str r1, [r4]
 
     # r3: temp out data for GPIOB->ODR
-    lsl r3, r0, $6
-    and r3, r3, $0x0380
+    lsl r1, r0, $6
+
+    and r1, r1, $0x0380
     #orr r1, r1, r3
-    str r3, [r6]
+    str r1, [r6]
 
     # r3: temp out data for GPIOC->ODR
-    and r3, r0, $0x00F1
+    and r1, r0, $0x00F1
     #orr r2, r2, r3
-    str r3, [r7]
+    str r1, [r7]
 
     # Set Data pins to output
     # r1: Value to set MODER
-    ldr r1, =GPIOBMODER
-    str r1, [r9, -IDROffset]
-
-    ldr r1, =GPIOCMODER
-    str r1, [r10, -IDROffset]
     
     #ldr r2, =CYCCNT
     #ldr r1, [r2]
     #orr r2, lr, 0
 
     # Save r12 in r4
-    #orr r4, r12, $0
+    #push {r12}
 
     #bl log_time
 
-    #orr r12, r4, $0
+    #pop {r12}
    
     b run_cycle_loop
 

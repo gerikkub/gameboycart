@@ -30,11 +30,12 @@ int main() {
     GPIOB->OSPEEDR = 0xFFFFFFFF;
     GPIOC->OSPEEDR = 0xFFFFFFFF;
 
-    enable_gb_clock_exti();
+    //enable_gb_clock_exti();
 
     printf("Printf test %X\r\n", 0xDEADBEEF);
     printf("Sysclk: %lu\r\n", HAL_RCC_GetSysClockFreq());
 
+    __disable_irq();
     //__enable_irq();
 
     //EXTI->SWIER = 0x20;
