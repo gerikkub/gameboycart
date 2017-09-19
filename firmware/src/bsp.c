@@ -39,6 +39,10 @@ void init_all_pins() {
     config_pin_basic(PIN_GB_RD, PIN_INPUT);
     config_pin_basic(PIN_GB_CS, PIN_INPUT);
     config_pin_basic(PIN_GB_CLK, PIN_INPUT);
+
+    config_pin_basic(GPIOA, 13, PIN_INPUT);
+    config_pin_basic(GPIOA, 14, PIN_INPUT);
+    config_pin_basic(GPIOA, 15, PIN_INPUT);
 }
 
 uint32_t get_addr_pins() {

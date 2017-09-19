@@ -34,7 +34,7 @@ SOURCES += $(SOURCE)/rtt/rtt.c
 
 SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
-SOURCES += $(GAMES)/Tetris.gb.c
+SOURCES += $(GAMES)/Tennis.gb.c
 
 OBJECTS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SOURCES))))
 

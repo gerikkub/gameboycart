@@ -17,7 +17,8 @@ void setup_clocks() {
     osc.PLL.PLLState = RCC_PLL_ON;
     osc.PLL.PLLSource = RCC_PLLSOURCE_HSI;
     osc.PLL.PLLM = 4;
-    osc.PLL.PLLN = 90;
+    //osc.PLL.PLLN = 90;
+    osc.PLL.PLLN = 95; //OVERCLOCK!!!!!!!!
     osc.PLL.PLLP = RCC_PLLP_DIV2;
     osc.PLL.PLLQ = 15;
 
