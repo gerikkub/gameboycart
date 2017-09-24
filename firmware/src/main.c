@@ -10,7 +10,15 @@
 #include "bsp.h"
 #include "exti.h"
 
-#include "Tetris.gb.h"
+struct log_data_t {
+    uint32_t write_addr;
+    uint32_t raw_data;
+    uint32_t fixed_addr;
+}__attribute__((packed));
+
+struct log_data_t log_data[2048];
+
+struct log_data_t* log_ptr = log_data;
 
 void run_cycle();
 
@@ -36,59 +44,12 @@ int main() {
     printf("Sysclk: %lu\r\n", HAL_RCC_GetSysClockFreq());
 
     __disable_irq();
-    //__enable_irq();
-
-    //EXTI->SWIER = 0x20;
-
-    uint32_t cycle_diff;
-    volatile uint8_t out_data;
-
-    //while (1) {
-    //}
 
     run_cycle();
 
     printf("Exited\r\n");
 
     while(1);
-
-    while (1) {
-    
-        uint32_t cycle_start = DWT->CYCCNT;
-        //uint32_t addr_pins = get_addr_pins();
-        //uint32_t data_pins = get_data_pins();
-        //uint32_t ctrl_pins = get_ctrl_pins();
-        uint32_t addr_pins = GET_ADDR_LOWER_PINS;
-        uint32_t data_pins = GET_ADDR_PINS;
-        uint32_t ctrl_pins = GET_ADDR_PINS;
-
-
-        if ((ctrl_pins & GB_RD_MASK) == 0) {
-            out_data = gameData[addr_pins];
-
-            //write_data_pins(out_data);
-            WRITE_DATA_PINS_1(out_data);
-            WRITE_DATA_PINS_2(out_data);
-        }
-
-        (void)out_data;
-
-        uint32_t cycle_end = DWT->CYCCNT;
-
-        (void)addr_pins;
-        (void)data_pins;
-        (void)ctrl_pins;
-
-        cycle_diff = cycle_end - cycle_start;
-
-        //printf("Addr: %.4lX Data: %.2lX Ctrl: %.2lX\r\n", addr_pins, data_pins, ctrl_pins);
-        printf("Diff: %lu\r\n", cycle_diff);
-
-        //volatile int i;
-        //for (i = 0; i < 10000; i++) {
-        //}
-    
-    }
 
     return 0;
 }

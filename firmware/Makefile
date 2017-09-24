@@ -7,6 +7,8 @@ SYSTEM = system
 SOURCE = src
 GAMES  = games
 
+GAME = Tetris.gb
+
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_rcc.c \
@@ -34,9 +36,15 @@ SOURCES += $(SOURCE)/rtt/rtt.c
 
 SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
-SOURCES += $(GAMES)/Tennis.gb.c
+
+#SOURCES += $(GAMES)/Mario.gb.c
+#SOURCES += $(GAMES)/Kirby.gb.c
+#SOURCES += $(GAMES)/Tennis.gb
+SOURCES += $(GAMES)/$(GAME)
 
 OBJECTS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SOURCES))))
+
+GAME_SYM = $(addprefix _binary_games_, $(addsuffix _gb_start, $(basename $(GAME))))
 
 INCLUDES += -I$(DEVICE)/include \
 			-I$(LIBRARIES)/include \
@@ -91,6 +99,11 @@ $(BUILDDIR)/%.o: %.c
 $(BUILDDIR)/%.o: %.s
 	mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILDDIR)/%.o: %.gb
+	echo $(GAME_SYM)
+	mkdir -p $(dir $@)
+	$(OBJCOPY) -I binary -O elf32-littlearm -B arm --redefine-sym $(GAME_SYM)=game_data --rename-section .data=.game $< $@
 
 flash: $(BIN)
 	JLinkExe -Device STM32F427VI -CommanderScript $(FLASH_SCRIPT)

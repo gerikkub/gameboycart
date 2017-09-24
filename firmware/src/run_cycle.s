@@ -4,7 +4,7 @@
 .fpu softvfp
 .thumb
 
-.extern gameData
+.extern game_data
 
 .extern log_time
 
@@ -51,14 +51,14 @@ run_cycle:
     
     push {r0-r12, lr}
 
-    ldr r2, =gameData
+    ldr r2, =game_data
     add r2, r2, $0x4000
 
     ldr r3, =GPIOB
 
     ldr r4, =GPIOC
 
-    ldr r5, =gameData
+    ldr r5, =game_data
 
     ldr r6, =GPIOB
     add r6, r6, ODROffset
