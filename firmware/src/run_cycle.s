@@ -86,73 +86,60 @@ run_cycle_loop:
     #ldr r0, =CYCCNT
     #ldr lr, [r0]
 
+    # Wait while the clock is low
+    ldr r0, [r12]
+    tst r0, $0x20
+    beq run_cycle_loop
+
+    .rept 35
+    nop
+    .endr
+
     # r0: [GPIOE->IDR]
-    # r1: ctrl_pin_rd
-    ldr r1, [r12]
-    #ands r1, r0, $0x8
+    # Test the rd pin
+    ldr r0, [r12]
+    tst r0, $0x8
+    bne run_cycle_check_wr
+    #bne run_cycle_loop
 
-    # Branch if Z==1 (RD pin is set)
-    #bne run_cycle_check_wr
-
-    # r0: [GPIOA->IDR]
-    # r1: [GPIOD->IDR]
-    # r2: [GPIOC->DIR]
+    # r0: [GPIOE->IDR]
+    # r1: [GPIOA->IDR]
+    # r14: [GPIOD->IDR]
     ldr r0, [r10]
-
-    bfi r1, r0, $0, $2
-    tst r1, $0xA
-    #ands r1, r0, $0x2
-
-    # Branch if Z==1 (Addr[15] is set)
-    beq run_cycle_loop_cont2
-
-    b run_cycle_data_z
-
-run_cycle_loop_cont2:
-
-    # r3: addr_pins_lower
-    # r4: temp
-
     ldr r1, [r8]
     ldr r14, [r11]
-
 
     # Check the 2nd msb for the bank
     tsts r0, $0x4
 
-    #rbit r0, r0
+    # Place GB_A13 into address (r1)
     lsr r0, r0, $3
     bfi r1, r0, $13, $1
 
-
+    # Place GB_A4-5 into address (r1)
     lsr r0, r14, $4
     bfi r1, r0, $4, $2
 
-    #uxth r1, r1
-    #bfi r1, r1, $0, 14
+    bfc r1, $14, $2
 
-    # From the and condition. eq means bank 0
+    # Run a conditional on the previous tst
+    # Tested GB_A14 to determine which bank (0 or X)
+    # to read from.
+    # r0: Contains the byte read from the ROM
     ite eq
     ldrbeq r0, [r5, r1]
     ldrbne r0, [r2, r1]
 
+    # Write the MODER value to GPIOB/C
     ldr r1, =GPIOMODER
     str r1, [r3]
-
-    # r0: data value
-
     str r1, [r4]
 
-    # r3: temp out data for GPIOB->ODR
+    # Write the ROM byte to GPIOB/C
     lsl r1, r0, $6
-
     str r1, [r6]
 
-    # r3: temp out data for GPIOC->ODR
     str r0, [r7]
-
-    # Set Data pins to output
-    # r1: Value to set MODER
     
     #ldr r1, =CYCCNT
     #ldr r1, [r1]
