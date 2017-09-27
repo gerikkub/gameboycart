@@ -100,7 +100,6 @@ run_cycle_loop:
     ldr r0, [r12]
     tst r0, $0x8
     bne run_cycle_check_wr
-    #bne run_cycle_loop
 
     # r0: [GPIOE->IDR]
     # r1: [GPIOA->IDR]
@@ -131,8 +130,9 @@ run_cycle_loop:
     ldrbne r0, [r2, r1]
 
     # Write the MODER value to GPIOB/C
-    ldr r1, =GPIOMODER
+    ldr r1, =GPIOBMODER
     str r1, [r3]
+    ldr r1, =GPIOCMODER
     str r1, [r4]
 
     # Write the ROM byte to GPIOB/C
@@ -147,8 +147,6 @@ run_cycle_loop:
     # Save r2, r12
     #push {r2, r12}
 
-    #orr r2, lr, 0
-
     #bl log_time
 
     #pop {r2, r12}
@@ -162,23 +160,14 @@ run_cycle_check_wr:
 
     # Set Data to High-Z
     ldr r1, =$0
-    str r0, [r3]
-    str r0, [r4]
+    str r1, [r3]
+    str r1, [r4]
 
-    # Check for WR==0 & CS==0
-    # Assume GPIOE->IDR is already in r0
-    ands r1, r0, $0x18
+    #.rept 15
+    #nop
+    #.endr
 
-    # Return to loop if WR==1 || CS==1
-    bne run_cycle_loop
-
-    push {r2}
-
-    # Read data byte into r2
-    ldr r0, [r10]
-    ldr r1, [r9]
-    lsr r1, r1, $7
-    bfi r2, r1, $1, $3
+    # Read in the address
 
     # Read address half-word into r1
     ldr r0, [r10]
@@ -193,14 +182,46 @@ run_cycle_check_wr:
     lsr r0, r0, $4
     bfi r1, r0, $4, $2
 
-    uxth r1, r1
+    uxth r0, r1
 
-    pop {r2}
+    lsr r1, r0, $12
+
+    # Check if the address is for us
+    #cmp r1, $0x3
+    #bhi run_cycle_loop
+    
+    #cmp r1, $0x1
+    #bls run_cycle_loop
+    
+    #cmp r1, $0x7
+    #bhi run_cycle_loop
+
+    # Address is for us
+    # Wait until WR goes low to read in data
+run_cycle_check_wr_wait:
+    ldr r2, [r12]
+    tst r2, $0x4
+    bne run_cycle_check_wr_wait
+
+    #.rept 10
+    #nop
+    #.endr
+
+
+    # Read data byte into r2
+    ldr r2, [r10]
+    ldr r1, [r9]
+    lsr r1, r1, $7
+    bfi r2, r1, $1, $3
+
+    #ldr r1, =log_ptr
+    #ldr r1, [r1]
+    #stmia r1!, {r0, r2}
 
     # Assume for now that the address is for setting the memory bank
     
     # Only the bottom 5 bits of the data are used
-    and r0, r0, $0x1F
+    and r0, r2, $0x1F
     
     # If data is 0, increment it by one
     cmp r0, $0
@@ -213,13 +234,17 @@ run_cycle_check_wr_cont:
     # Generate the bank offset
     lsl r0, r0, $14
     add r2, r5, r0
+
+    #push {r2-r3, lr}
+
+    #bl print_data
+
+    #pop {r2-r3, lr}
+
+    #stmia r1!, {r2}
+    #ldr r0, =log_ptr
+    #str r1, [r0]
     
     # Go back to the loop
     b run_cycle_loop
     
-run_cycle_data_z:
-
-    ldr r0, =$0
-    str r0, [r3]
-    str r0, [r4]
-    b run_cycle_loop

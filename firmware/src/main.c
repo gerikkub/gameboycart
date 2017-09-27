@@ -54,6 +54,10 @@ int main() {
     return 0;
 }
 
+void print_data(uint8_t data_shift, uint8_t data, uint32_t addr) {
+    SEGGER_RTT_printf(0, "Data: %.2X Shift: %.8X\r\n", data, data_shift);
+}
+
 void log_time(uint8_t inst_data, uint32_t end_time, uint32_t start_time) {
 
     uint32_t cycle_diff = end_time - start_time;

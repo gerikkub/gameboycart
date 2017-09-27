@@ -7,7 +7,7 @@ SYSTEM = system
 SOURCE = src
 GAMES  = games
 
-GAME = Tetris.gb
+GAME = Kirby.gb
 
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
@@ -37,9 +37,6 @@ SOURCES += $(SOURCE)/rtt/rtt.c
 SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
 
-#SOURCES += $(GAMES)/Mario.gb.c
-#SOURCES += $(GAMES)/Kirby.gb.c
-#SOURCES += $(GAMES)/Tennis.gb
 SOURCES += $(GAMES)/$(GAME)
 
 OBJECTS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SOURCES))))
