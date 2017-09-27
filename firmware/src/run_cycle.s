@@ -51,35 +51,18 @@ run_cycle:
     
     push {r0-r12, lr}
 
-    ldr r2, =game_data
-    add r2, r2, $0x4000
-
-    ldr r3, =GPIOB
-
-    ldr r4, =GPIOC
 
     ldr r5, =game_data
 
-    ldr r6, =GPIOB
-    add r6, r6, ODROffset
+    ldr r6, =game_data
+    add r6, r6, $0x4000
 
-    ldr r7, =GPIOC
-    add r7, r7, ODROffset
 
     ldr r8, =GPIOA
-    add r8, r8, IDROffset
-    
     ldr r9, =GPIOB
-    add r9, r9, IDROffset
-    
     ldr r10, =GPIOC
-    add r10, r10, IDROffset
-    
     ldr r11, =GPIOD
-    add r11, r11, IDROffset
-    
     ldr r12, =GPIOE
-    add r12, r12, IDROffset
     
 run_cycle_loop:
 
@@ -87,7 +70,7 @@ run_cycle_loop:
     #ldr lr, [r0]
 
     # Wait while the clock is low
-    ldr r0, [r12]
+    ldr r0, [r12, IDROffset]
     tst r0, $0x20
     beq run_cycle_loop
 
@@ -97,16 +80,16 @@ run_cycle_loop:
 
     # r0: [GPIOE->IDR]
     # Test the rd pin
-    ldr r0, [r12]
+    ldr r0, [r12, IDROffset]
     tst r0, $0x8
     bne run_cycle_check_wr
 
     # r0: [GPIOE->IDR]
     # r1: [GPIOA->IDR]
     # r14: [GPIOD->IDR]
-    ldr r0, [r10]
-    ldr r1, [r8]
-    ldr r14, [r11]
+    ldr r0, [r10, IDROffset]
+    ldr r1, [r8, IDROffset]
+    ldr r14, [r11, IDROffset]
 
     # Check the 2nd msb for the bank
     tsts r0, $0x4
@@ -127,19 +110,19 @@ run_cycle_loop:
     # r0: Contains the byte read from the ROM
     ite eq
     ldrbeq r0, [r5, r1]
-    ldrbne r0, [r2, r1]
+    ldrbne r0, [r6, r1]
 
     # Write the MODER value to GPIOB/C
     ldr r1, =GPIOBMODER
-    str r1, [r3]
+    str r1, [r9]
     ldr r1, =GPIOCMODER
-    str r1, [r4]
+    str r1, [r10]
 
     # Write the ROM byte to GPIOB/C
     lsl r1, r0, $6
-    str r1, [r6]
+    str r1, [r9, ODROffset]
 
-    str r0, [r7]
+    str r0, [r10, ODROffset]
     
     #ldr r1, =CYCCNT
     #ldr r1, [r1]
@@ -160,8 +143,8 @@ run_cycle_check_wr:
 
     # Set Data to High-Z
     ldr r1, =$0
-    str r1, [r3]
-    str r1, [r4]
+    str r1, [r9]
+    str r1, [r10]
 
     #.rept 15
     #nop
@@ -170,14 +153,14 @@ run_cycle_check_wr:
     # Read in the address
 
     # Read address half-word into r1
-    ldr r0, [r10]
-    ldr r1, [r8]
+    ldr r0, [r10, IDROffset]
+    ldr r1, [r8, IDROffset]
 
     rbit r0, r0
     lsr r0, r0, $28
     bfi r1, r0, $13, $3
 
-    ldr r0, [r11]
+    ldr r0, [r11, IDROffset]
 
     lsr r0, r0, $4
     bfi r1, r0, $4, $2
@@ -199,7 +182,7 @@ run_cycle_check_wr:
     # Address is for us
     # Wait until WR goes low to read in data
 run_cycle_check_wr_wait:
-    ldr r2, [r12]
+    ldr r2, [r12, IDROffset]
     tst r2, $0x4
     bne run_cycle_check_wr_wait
 
@@ -209,8 +192,8 @@ run_cycle_check_wr_wait:
 
 
     # Read data byte into r2
-    ldr r2, [r10]
-    ldr r1, [r9]
+    ldr r2, [r10, IDROffset]
+    ldr r1, [r9, IDROffset]
     lsr r1, r1, $7
     bfi r2, r1, $1, $3
 
@@ -233,7 +216,7 @@ run_cycle_check_wr_cont:
     
     # Generate the bank offset
     lsl r0, r0, $14
-    add r2, r5, r0
+    add r6, r5, r0
 
     #push {r2-r3, lr}
 
