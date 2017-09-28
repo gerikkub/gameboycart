@@ -57,6 +57,7 @@ run_cycle:
     ldr r6, =game_data
     add r6, r6, $0x4000
 
+    ldr r7, =game_ram
 
     ldr r8, =GPIOA
     ldr r9, =GPIOB
@@ -74,7 +75,7 @@ run_cycle_loop:
     tst r0, $0x20
     beq run_cycle_loop
 
-    .rept 35
+    .rept 32
     nop
     .endr
 
@@ -84,15 +85,20 @@ run_cycle_loop:
     tst r0, $0x8
     bne run_cycle_check_wr
 
-    # r0: [GPIOE->IDR]
+    # r0: [GPIOC->IDR]
+    ldr r0, [r10, IDROffset]
+
+    # Check if A15 is set
+    tst r0, $0x2
+    bne run_cycle_ram
+
     # r1: [GPIOA->IDR]
     # r14: [GPIOD->IDR]
-    ldr r0, [r10, IDROffset]
     ldr r1, [r8, IDROffset]
     ldr r14, [r11, IDROffset]
 
     # Check the 2nd msb for the bank
-    tsts r0, $0x4
+    tst r0, $0x4
 
     # Place GB_A13 into address (r1)
     lsr r0, r0, $3
@@ -124,20 +130,54 @@ run_cycle_loop:
 
     str r0, [r10, ODROffset]
     
-    #ldr r1, =CYCCNT
-    #ldr r1, [r1]
-
-    # Save r2, r12
-    #push {r2, r12}
-
-    #bl log_time
-
-    #pop {r2, r12}
-   
     b run_cycle_loop
 
-run_cycle_end:
-    pop {r0-r12, pc}
+run_cycle_ram:
+
+    # Check A14. It should be clear for a RAM address
+    tst r0, $0x4
+    bne run_cycle_loop
+
+    # Check A13. It should be set for a RAM address
+    tst r0, $8
+    beq run_cycle_loop
+
+    # Read in the rest of the address
+    # r1: [GPIOA->IDR]
+    # r14: [GPIOD->IDR]
+    ldr r1, [r8, IDROffset]
+    ldr r14, [r11, IDROffset]
+
+    # Place GB_A4-5 into address (r1)
+    lsr r0, r14, $4
+    bfi r1, r0, $4, $2
+
+    bfc r1, $14, $2
+
+    # We have a read from RAM
+    # Clear A12-13
+    bfc r1, $12, $2
+
+    # Run a conditional on the previous tst
+    # Tested GB_A14 to determine which bank (0 or X)
+    # to read from.
+    # r0: Contains the byte read from the ROM
+    ldrb r0, [r7, r1]
+
+    # Write the MODER value to GPIOB/C
+    ldr r1, =GPIOBMODER
+    str r1, [r9]
+    ldr r1, =GPIOCMODER
+    str r1, [r10]
+
+    # Write the RAM byte to GPIOB/C
+    lsl r1, r0, $6
+    str r1, [r9, ODROffset]
+
+    str r0, [r10, ODROffset]
+    
+    b run_cycle_loop
+
 
 run_cycle_check_wr:
 
@@ -146,50 +186,85 @@ run_cycle_check_wr:
     str r1, [r9]
     str r1, [r10]
 
-    #.rept 15
-    #nop
-    #.endr
-
     # Read in the address
 
     # Read address half-word into r1
     ldr r0, [r10, IDROffset]
-    ldr r1, [r8, IDROffset]
 
+    # r1: [GPIOA->IDR]
+    # r14: [GPIOD->IDR]
+    ldr r1, [r8, IDROffset]
+    ldr r14, [r11, IDROffset]
+
+    # Place GB_A13 into address (r1)
     rbit r0, r0
     lsr r0, r0, $28
     bfi r1, r0, $13, $3
 
-    ldr r0, [r11, IDROffset]
-
-    lsr r0, r0, $4
+    # Place GB_A4-5 into address (r1)
+    lsr r0, r14, $4
     bfi r1, r0, $4, $2
 
-    uxth r0, r1
 
-    lsr r1, r0, $12
+    tst r1, $0x8000
+    beq run_cycle_write_mbc1
+
+    tst r1, $0x4000
+    bne run_cycle_loop
+
+    lsr r0, r1, $12
+    and r0, r0, $0x3
+    cmp r0, $1
+    bls run_cycle_loop
+
+    # If we got here we have a RAM write
+
+run_cycle_ram_wait:
+    ldr r2, [r12, IDROffset]
+    tst r2, $0x4
+    bne run_cycle_ram_wait
+
+    # Read data byte into r2
+    ldr r2, [r10, IDROffset]
+    ldr r0, [r9, IDROffset]
+    lsr r0, r0, $7
+    bfi r2, r0, $1, $3
+
+
+    # r2 contains data byte
+    # r1 contains address
+    ldr r0, =0x0FFF
+    and r1, r1, r0
+
+    strb r2, [r7, r1]
+
+    #ldr r2, =log_ptr
+    #ldr r2, [r2]
+    #stmia r2!, {r1, r2, r7}
+    #ldr r0, =log_ptr
+    #str r2, [r0]
+
+    b run_cycle_loop
+    
+
+
+
+run_cycle_write_mbc1:
 
     # Check if the address is for us
-    #cmp r1, $0x3
-    #bhi run_cycle_loop
+    cmp r1, $0x3
+    bhi run_cycle_loop
     
-    #cmp r1, $0x1
-    #bls run_cycle_loop
+    cmp r1, $0x1
+    bls run_cycle_loop
     
-    #cmp r1, $0x7
-    #bhi run_cycle_loop
-
     # Address is for us
     # Wait until WR goes low to read in data
+
 run_cycle_check_wr_wait:
     ldr r2, [r12, IDROffset]
     tst r2, $0x4
     bne run_cycle_check_wr_wait
-
-    #.rept 10
-    #nop
-    #.endr
-
 
     # Read data byte into r2
     ldr r2, [r10, IDROffset]

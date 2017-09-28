@@ -20,6 +20,8 @@ struct log_data_t log_data[2048];
 
 struct log_data_t* log_ptr = log_data;
 
+uint8_t game_ram[0x8192] = {};
+
 void run_cycle();
 
 int main() {
