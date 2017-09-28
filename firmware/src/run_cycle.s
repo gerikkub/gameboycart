@@ -54,8 +54,7 @@ run_cycle:
 
     ldr r5, =game_data
 
-    ldr r6, =game_data
-    add r6, r6, $0x4000
+    ldr r6, =$0x4000
 
     ldr r7, =game_ram
 
@@ -114,9 +113,10 @@ run_cycle_loop:
     # Tested GB_A14 to determine which bank (0 or X)
     # to read from.
     # r0: Contains the byte read from the ROM
-    ite eq
+    itee eq
     ldrbeq r0, [r5, r1]
-    ldrbne r0, [r6, r1]
+    addne r4, r5, r6
+    ldrbne r0, [r4, r1]
 
     # Write the MODER value to GPIOB/C
     ldr r1, =GPIOBMODER
@@ -252,29 +252,29 @@ run_cycle_ram_wait:
 run_cycle_write_mbc1:
 
     # Check if the address is for us
-    cmp r1, $0x3
-    bhi run_cycle_loop
+    lsr r0, r1, $13
+    cmp r0, $0x1
+    beq run_cycle_wr_bank_low
     
-    cmp r1, $0x1
-    bls run_cycle_loop
+    cmp r0, $0x2
+    #bls run_cycle_wr_bank_high
     
+    b run_cycle_loop
+
+
     # Address is for us
     # Wait until WR goes low to read in data
 
-run_cycle_check_wr_wait:
+run_cycle_wr_bank_low:
     ldr r2, [r12, IDROffset]
     tst r2, $0x4
-    bne run_cycle_check_wr_wait
+    bne run_cycle_wr_bank_low
 
     # Read data byte into r2
     ldr r2, [r10, IDROffset]
     ldr r1, [r9, IDROffset]
     lsr r1, r1, $7
     bfi r2, r1, $1, $3
-
-    #ldr r1, =log_ptr
-    #ldr r1, [r1]
-    #stmia r1!, {r0, r2}
 
     # Assume for now that the address is for setting the memory bank
     
@@ -290,19 +290,30 @@ run_cycle_check_wr_wait:
 run_cycle_check_wr_cont:
     
     # Generate the bank offset
-    lsl r0, r0, $14
-    add r6, r5, r0
+    bfi r6, r0, $14, $5
 
-    #push {r2-r3, lr}
-
-    #bl print_data
-
-    #pop {r2-r3, lr}
-
-    #stmia r1!, {r2}
-    #ldr r0, =log_ptr
-    #str r1, [r0]
-    
     # Go back to the loop
     b run_cycle_loop
     
+
+run_cycle_wr_bank_high:
+    ldr r2, [r12, IDROffset]
+    tst r2, $0x4
+    bne run_cycle_wr_bank_low
+
+    # Read data byte into r2
+    ldr r2, [r10, IDROffset]
+    ldr r1, [r9, IDROffset]
+    lsr r1, r1, $7
+    bfi r2, r1, $1, $3
+
+    # Assume for now that the address is for setting the memory bank
+    
+    # Only the bottom 5 bits of the data are used
+    and r0, r2, $0x3
+    
+    # Generate the bank offset
+    bfi r6, r0, $19, $2
+
+    # Go back to the loop
+    b run_cycle_loop
