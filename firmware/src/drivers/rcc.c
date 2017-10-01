@@ -19,7 +19,7 @@ void setup_clocks() {
     osc.PLL.PLLM = 4;
     osc.PLL.PLLN = 90;
     osc.PLL.PLLP = RCC_PLLP_DIV2;
-    osc.PLL.PLLQ = 15;
+    osc.PLL.PLLQ = 8;
 
     HAL_RCC_OscConfig(&osc);
 

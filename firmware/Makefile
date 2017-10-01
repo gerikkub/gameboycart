@@ -6,8 +6,11 @@ LIBRARIES = libraries/STM32F4xx_HAL_Driver
 SYSTEM = system
 SOURCE = src
 GAMES  = games
+FATFS = libraries/FatFs
+FATFS_DRIVERS = $(FATFS)/drivers
+BSP = libraries/BSP
 
-GAME = Kirby.gb
+GAME = Tetris.gb
 
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
@@ -17,7 +20,11 @@ SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_pwr_ex.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_flash.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_flash_ex.c \
-		   $(LIBRARIES)/source/stm32f4xx_hal.c
+		   $(LIBRARIES)/source/stm32f4xx_hal_sd.c \
+		   $(LIBRARIES)/source/stm32f4xx_ll_sdmmc.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_dma.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal_dma_ex.c \
+		   $(LIBRARIES)/source/stm32f4xx_hal.c 
 
 SOURCES += $(SYSTEM)/startup_stm32f427xx.s \
 		   $(SYSTEM)/system_stm32f4xx.c
@@ -28,7 +35,9 @@ SOURCES += $(SOURCE)/main.c \
 
 SOURCES += $(SOURCE)/drivers/rcc.c \
 		   $(SOURCE)/drivers/gpio.c \
-		   $(SOURCE)/drivers/exti.c
+		   $(SOURCE)/drivers/exti.c \
+		   $(SOURCE)/drivers/spi_gpio.c \
+		   $(SOURCE)/drivers/sdio.c
 
 SOURCES += $(SOURCE)/rtt/SEGGER_RTT.c
 SOURCES += $(SOURCE)/rtt/SEGGER_RTT_printf.c
@@ -36,8 +45,14 @@ SOURCES += $(SOURCE)/rtt/rtt.c
 
 SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
-
 SOURCES += $(GAMES)/$(GAME)
+
+#SOURCES += $(FATFS)/diskio.c \
+		   #$(FATFS)/ff.c \
+		   #$(FATFS)/ff_gen_drv.c \
+
+#SOURCES += $(FATFS_DRIVERS)/sd_diskio.c
+
 
 OBJECTS = $(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(SOURCES))))
 
@@ -47,9 +62,12 @@ INCLUDES += -I$(DEVICE)/include \
 			-I$(LIBRARIES)/include \
 			-I$(CMSIS)/include \
 			-I$(SYSTEM) \
+			-I$(SOURCE) \
 			-I$(SOURCE)/rtt \
 			-I$(SOURCE)/drivers \
 			-I$(GAMES) \
+			-I$(FATFS) \
+			-I$(FATFS_DRIVERS) \
 			-I.
 
 ELF = $(BUILDDIR)/program.elf
@@ -64,7 +82,7 @@ OBJCOPY = arm-none-eabi-objcopy
 
 WARNINGS = -Wall -Werror -Wno-unused-function
 	
-CFLAGS  = -Ofast -g \
+CFLAGS  = -O0 -g \
    -mcpu=cortex-m4 -mthumb \
    -mfloat-abi=soft \
    $(INCLUDES) -DUSE_STDPERIPH_DRIVER \
