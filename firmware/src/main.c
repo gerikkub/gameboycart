@@ -87,6 +87,48 @@ int main() {
     
     init_spi_gpio();
 
+    SDPath[0] = '/';
+    SDPath[1] = '\0';
+
+    if (1) {
+
+        if (f_mount(&SDFatFs, (const char*)SDPath, 0) != FR_OK) {
+            printf("Failed to mount SD card\r\n");
+        } else {
+
+            if (f_opendir(&my_dir, (const char*)SDPath) != FR_OK) {
+                printf("Failed to open directory\r\n");
+            } else {
+
+                printf("Reading %s\r\n", SDPath);
+                while (1) {
+                    FRESULT res;
+                    if ((res = f_readdir(&my_dir, &my_finfo)) != FR_OK) {
+                        printf("f_readdir failed %u\r\n", res);
+                        break;
+                    }
+
+                    if (my_finfo.fname[0] == 0) {
+                        break;
+                    }
+
+                    printf("%s\r\n", my_finfo.fname);
+
+                }
+
+                printf("Done reading files\r\n");
+
+            }
+
+        }
+    } else {
+        printf("Failed to link driver\r\n");
+    }
+            
+
+    while (1);
+
+
     int resp = init_sd_card();
 
     printf("Resp: %.8x\r\n", resp);

@@ -47,9 +47,9 @@ SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
 SOURCES += $(GAMES)/$(GAME)
 
-#SOURCES += $(FATFS)/diskio.c \
-		   #$(FATFS)/ff.c \
-		   #$(FATFS)/ff_gen_drv.c \
+SOURCES += $(FATFS)/diskio.c \
+		   $(FATFS)/ff.c \
+		   $(FATFS)/ff_gen_drv.c \
 
 #SOURCES += $(FATFS_DRIVERS)/sd_diskio.c
 
