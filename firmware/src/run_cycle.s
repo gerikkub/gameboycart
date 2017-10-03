@@ -69,10 +69,16 @@ run_cycle_loop:
     #ldr r0, =CYCCNT
     #ldr lr, [r0]
 
+wait_clk_low:
+    ldr r0, [r12, IDROffset]
+    tst r0, $0x20
+    bne wait_clk_low
+
+wait_clk_high:
     # Wait while the clock is low
     ldr r0, [r12, IDROffset]
     tst r0, $0x20
-    beq run_cycle_loop
+    beq wait_clk_high
 
     .rept 32
     nop
@@ -175,7 +181,7 @@ run_cycle_ram:
     str r1, [r9, ODROffset]
 
     str r0, [r10, ODROffset]
-    
+
     b run_cycle_loop
 
 

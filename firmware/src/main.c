@@ -40,22 +40,15 @@ SD_HandleTypeDef sd_handle;
 
 int main() {
 
-    uint8_t sdio_rx_buf[512];
-    memset(sdio_rx_buf, 0, 512);
+    int ram_idx = 0;
 
-    HAL_Init();
+    //HAL_Init();
 
-    HAL_NVIC_EnableIRQ(SysTick_IRQn);
-    __enable_irq();
-    //while (1) {
-    //}
-    //*(uint32_t*)0xE000E100 = 0xFFFFFFFF;
-
-    //HAL_SYSTICK_Config(180000);
-    //HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+    //HAL_NVIC_EnableIRQ(SysTick_IRQn);
+    //__enable_irq();
 
     enable_perf_clocks();
-    //setup_clocks();
+    setup_clocks();
 
     // Disable WWDG
     RCC->APB1ENR &= ~(1 << 11);
@@ -63,28 +56,6 @@ int main() {
     // Enable RTT (JLink) communication
     init_rtt();
 
-    //sdio_init();
-
-    //sd_handle.Instance = SDIO;
-    //sd_handle.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;
-    //sd_handle.Init.ClockBypass = SDIO_CLOCK_BYPASS_ENABLE;
-    //sd_handle.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
-    //sd_handle.Init.BusWide = SDIO_BUS_WIDE_1B;
-    //sd_handle.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_ENABLE;
-    //sd_handle.Init.ClockDiv = 0;
-    //sd_handle.State = HAL_SD_STATE_RESET;
-
-    //if (HAL_SD_Init(&sd_handle) != HAL_OK) {
-        //printf("Failed to init SD\r\n");
-        //while (1);
-    //}
-
-    //if (HAL_SD_ReadBlocks(&sd_handle, sdio_rx_buf, 0, 1, 10000) != HAL_OK) {
-        //printf("Failed to read block\r\n");
-        //while (1);
-    //}
-
-    
     init_spi_gpio();
 
     SDPath[0] = '/';
@@ -112,9 +83,25 @@ int main() {
                         break;
                     }
 
+                    if (my_finfo.fname[0] == '_') {
+                        continue;
+                    }
+
                     printf("%s\r\n", my_finfo.fname);
 
+                    char* name_end = strstr(my_finfo.fname, ".GB");
+                    if (name_end != NULL) {
+                        uint32_t name_len = name_end - my_finfo.fname;
+
+                        memcpy(&game_ram[ram_idx], my_finfo.fname, name_len);
+                        game_ram[ram_idx + name_len] = 0;
+                        ram_idx += name_len + 1;
+                        
+                    }
+
                 }
+
+                game_ram[ram_idx] = 0;
 
                 printf("Done reading files\r\n");
 
@@ -125,26 +112,13 @@ int main() {
         printf("Failed to link driver\r\n");
     }
             
-
-    while (1);
-
-
-    int resp = init_sd_card();
-
-    printf("Resp: %.8x\r\n", resp);
-
-    while (1) {
-    }
-
+    (void)ram_idx;
     init_all_pins();
 
     GPIOB->OSPEEDR = 0xFFFFFFFF;
     GPIOC->OSPEEDR = 0xFFFFFFFF;
 
-    //enable_gb_clock_exti();
-
     printf("Printf test %X\r\n", 0xDEADBEEF);
-    printf("Sysclk: %lu\r\n", HAL_RCC_GetSysClockFreq());
 
     __disable_irq();
 

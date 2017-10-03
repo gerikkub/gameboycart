@@ -55,7 +55,19 @@ main:
 
     ld hl, $9800
     ; Load 256 sets of 4 bytes
-    ld b, $0
+    ld b, $80
+
+blank_background_wait1:
+    ; Wait for V-Blank
+    ld hl, $FF44
+    ld a, $90
+    cp [hl]
+    jr nz, blank_background_wait1
+
+    ld a, $FE
+    ld hl, $9800
+    ; Load 128 sets of 4 bytes
+    ld b, $60
 
 blank_background_loop1:
     
@@ -65,11 +77,58 @@ blank_background_loop1:
     ld [hl+], a
     dec b
     jr nz, blank_background_loop1
+
+    push hl
+    
+blank_background_wait2:
+    ; Wait for V-Blank
+    ld hl, $FF44
+    ld a, $90
+    cp [hl]
+    jr nz, blank_background_wait2
+
+    pop hl
+    ; Load 128 sets of 4 bytes
+    ld b, $60
+    ld a, $FE
+
+blank_background_loop2:
+    
+    ld [hl+], a
+    ld [hl+], a
+    ld [hl+], a
+    ld [hl+], a
+    dec b
+    jr nz, blank_background_loop2
+
+    push hl
+    
+blank_background_wait3:
+    ; Wait for V-Blank
+    ld hl, $FF44
+    ld a, $90
+    cp [hl]
+    jr nz, blank_background_wait3
+
+    pop hl
+    ; Load 128 sets of 4 bytes
+    ld b, $40
+    ld a, $FE
+
+blank_background_loop3:
+    
+    ld [hl+], a
+    ld [hl+], a
+    ld [hl+], a
+    ld [hl+], a
+    dec b
+    jr nz, blank_background_loop3
     
     ; Load tiles from 0x4000 to 0x9000
     ld hl, $8000
     ld bc, $4000
     ld a, $20
+
 
 load_tiles_loop1:
 
@@ -81,7 +140,7 @@ load_tiles_wait:
     ld hl, $FF44
     ld a, $90
     cp [HL]
-    ;jr nz, load_tiles_wait
+    jr nz, load_tiles_wait
 
     pop hl
     
@@ -110,17 +169,8 @@ load_tiles_loop2:
     ld hl, $FF47
     ld [hl], $E4
 
-    ; Wait for V-Blank
-    ld hl, $FF44
-    ld a, [hl]
-    cp a, 144
-    jp nz, main
-
-    ; Enable LCD
-    ld hl, $FF40
-    ld [hl], (1 | (1 << 1) | (1 << 4) | (1 << 7))
-
-    ld hl, $3000
+    ;ld hl, $3000
+    ld hl, $A000
     ld bc, $9801
 
 write_all_strings:
@@ -153,7 +203,20 @@ sprite_init_vblank_wait:
     ld de, $FF44
     ld a, [de]
     cp a, 144
-    jp nz, sprite_init_vblank_wait
+    jr nz, sprite_init_vblank_wait
+
+    ld hl, $FE00
+    ld a, $0
+    ld b, $28
+
+sprite_init_loop:
+    ld [hl], a
+    inc l
+    inc l
+    inc l
+    inc l
+    dec b
+    jr nz, sprite_init_loop
 
     ld hl, $FE00
     ; Start at top left tile
@@ -170,7 +233,19 @@ sprite_init_vblank_wait:
 
     ld hl, $FF48
     ld a, $E4
-    ld [hl], a 
+    ld [hl+], a 
+
+LCD_init:
+    ; Wait for V-Blank
+    ld hl, $FF44
+    ld a, [hl]
+    cp a, 144
+    jp nz, LCD_init
+
+
+    ; Enable LCD
+    ld hl, $FF40
+    ld [hl], (1 | (1 << 1) | (1 << 4) | (1 << 7))
 
 
     ; FF80 holds the selected game

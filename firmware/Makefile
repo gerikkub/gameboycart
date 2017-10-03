@@ -10,7 +10,7 @@ FATFS = libraries/FatFs
 FATFS_DRIVERS = $(FATFS)/drivers
 BSP = libraries/BSP
 
-GAME = Tetris.gb
+GAME = main.gb
 
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
