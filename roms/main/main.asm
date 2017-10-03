@@ -172,6 +172,7 @@ load_tiles_loop2:
     ;ld hl, $3000
     ld hl, $A000
     ld bc, $9801
+    ld d, $0
 
 write_all_strings:
 
@@ -180,14 +181,17 @@ write_all_strings:
     jr z, write_all_strings_done
 
     push bc
+    push de
 
     call write_string
 
+    pop de
     pop bc
     
     ld a, $20
     add c
     ld c, a
+    inc d
 
     jr nc, write_all_strings
 
@@ -195,6 +199,11 @@ write_all_strings:
     jr write_all_strings
 
 write_all_strings_done:
+
+    ; d contains the number of strings written
+    ; Store this in FF80
+    ld a, d
+    ldh [$80], a
 
     ; Write arrow sprite
 
@@ -242,20 +251,31 @@ LCD_init:
     cp a, 144
     jp nz, LCD_init
 
-
     ; Enable LCD
     ld hl, $FF40
     ld [hl], (1 | (1 << 1) | (1 << 4) | (1 << 7))
 
+    ; FF81 holds the selected game
+    ld a, 0
+    ldh [$81], a
 
-    ; FF80 holds the selected game
-    ;ld hl, $FF80
-    ;ld a, 0
-    ;ld [hl], a
+vblank_poll:
 
+    ld hl, $FF44
+    ld a, [hl]
+    cp a, $8F
+    jp nz, vblank_poll
 
-end:
-    jp end
+vblank_poll2:
+    ; Wait for V-Blank
+    ld hl, $FF44
+    ld a, [hl]
+    cp a, $90
+    jp nz, vblank_poll2
+
+    call vblank_isr
+
+    jp vblank_poll
 
 
 
@@ -353,4 +373,135 @@ write_byte_sync_video
     ld [hl+], a
     
     ret
+
+vblank_isr:
+
+    ; If FF82 is not 0, then we need before reading another button
+    ldh a, [$82]
+    and a
+    jr nz, dec_button_counter
+
+    call read_buttons
+
+    ld b, a
+
+    ld b, a
+    and $40
+    jr z, up_pressed
+
+    ld a, b
+    and $80
+    jr z, down_pressed
+
+    ;ld a, b
+    ;and $4
+    ;jr z, finish_selection
+
+    ret
+
+dpad_done:
+
+    ; Fix the Y location of the arrow
+    ldh a, [$81]
+
+    sla a
+    sla a
+    sla a
+    add $10
+
+    ld hl, $FE00
+    ld [hl], a
+
+    ld a, $6
+    ldh [$82], a
+
+    ret
+
+dec_button_counter:
+
+    ldh a, [$82]
+    dec a
+    ldh [$82], a
+
+    ret
+
+up_pressed:
+
+    ; Get the currently selected game
+    ldh a, [$81]
+
+    ; If we are already at game 0, quit
+    cp $0
+    jr z, dpad_done
+
+    ; Otherwise, decrement and write value
+    dec a
+    ldh [$81], a
+    
+    jr dpad_done
+
+down_pressed:
+
+    ; Get the currently selected game
+    ldh a, [$81]
+
+    ld b, a
+
+    ldh a, [$80]
+    dec a
+
+    ; Compare our position to the number of games
+    ; Quit if we are at the last game
+    cp a, b
+    jr z, dpad_done
+
+    ld a, b
+    inc a
+    ldh [$81], a
+    
+    jr dpad_done
+
+finish_selection:
+    jr finish_selection
+
+
+read_buttons:
+
+    ld a, $20
+    ldh [$00], a
+
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+
+    ld b, a
+    
+    ld a, $10
+    ldh [$00], a
+
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+    ldh a, [$00]
+
+    and $0F
+
+    sla b
+    sla b
+    sla b
+    sla b
+
+    or b
+
+    ret
+
 
