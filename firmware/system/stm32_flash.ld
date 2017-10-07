@@ -15,7 +15,8 @@ _Min_Stack_Size = 0x2000; 	/* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-  FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 2048K
+  FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1024K
+  GAME_ROM (r)    : ORIGIN = 0x8100000, LENGTH = 1024K
   RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 256K
 }
 
@@ -42,13 +43,14 @@ SECTIONS
     *(.glue_7t)        /* glue thumb to arm code */
     *(.game)           /* Game data */
 
+
+
     KEEP (*(.init))
     KEEP (*(.fini))
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
-
 
    .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
     .ARM : {
@@ -80,6 +82,12 @@ SECTIONS
 
   /* used by the startup to initialize data */
   _sidata = .;
+
+  .game_rom :
+  {
+    _game_rom_data = .;
+    *(.game_rom)
+  } >GAME_ROM
 
 
 /* User_heap_stack section, used to check that there is enough RAM left */

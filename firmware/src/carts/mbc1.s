@@ -4,10 +4,6 @@
 .fpu softvfp
 .thumb
 
-.extern game_data
-
-.extern log_time
-
 .set GPIOA, 0x40020000
 .set GPIOB, 0x40020400
 .set GPIOC, 0x40020800
@@ -32,7 +28,7 @@
 # IDR Offset: 0x10
 # ODR Offset: 0x14
 
-.global run_cycle
+.global mbc1_cart
 
 # r0: 
 # r1: 
@@ -47,12 +43,12 @@
 # r10: GPIOC->IDR
 # r11: GPIOD->IDR
 # r12: GPIOE->IDR
-run_cycle:
+mbc1_cart:
     
     push {r0-r12, lr}
 
 
-    ldr r5, =game_data
+    ldr r5, =_game_rom_data
 
     ldr r6, =$0x4000
 
@@ -244,14 +240,7 @@ run_cycle_ram_wait:
 
     strb r2, [r7, r1]
 
-    #ldr r2, =log_ptr
-    #ldr r2, [r2]
-    #stmia r2!, {r1, r2, r7}
-    #ldr r0, =log_ptr
-    #str r2, [r0]
-
     b run_cycle_loop
-    
 
 
 

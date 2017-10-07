@@ -393,9 +393,9 @@ vblank_isr:
     and $80
     jr z, down_pressed
 
-    ;ld a, b
-    ;and $4
-    ;jr z, finish_selection
+    ld a, b
+    and $4
+    jr z, finish_selection
 
     ret
 
@@ -462,7 +462,28 @@ down_pressed:
     jr dpad_done
 
 finish_selection:
-    jr finish_selection
+
+    ; Copy the load_poll procedure to RAM
+    ld hl, load_poll
+    ld bc, $C000
+    ld de, load_poll_done
+
+finish_selection_loop:
+    ld a, [hl+]
+    ld [bc], a
+    inc bc
+    
+    ld a, l
+    cp e
+    jr nz, finish_selection_loop
+
+    ld a, h
+    cp d
+    jr nz, finish_selection_loop
+
+    ; Loaded section to RAM, jump to it
+
+    jp $C000
 
 
 read_buttons:
@@ -505,3 +526,62 @@ read_buttons:
     ret
 
 
+
+SECTION "load_poll",ROM0[$1000]
+
+load_poll:
+
+    ld hl, $0
+    ld a, $A
+    ld [hl], a
+    
+    ; Mark that we are ready for the game load by writing
+    ; the selected game number to external RAM
+    ldh a, [$81]
+    ld hl, $A000
+    ld [hl], a
+
+    ld b, $BE
+
+    ; Keep checking external RAM until we get 0xBE back
+load_poll_loop:
+    ld a, [hl]
+    cp b
+    jr nz, load_poll_loop
+
+    ; Wait for a V-Blank
+load_poll_vblank:
+    ldh a, [$44]
+    cp $90
+    jr nz, load_poll_vblank
+
+    ; The firmware has loaded the game and we can try to run it
+
+    ; Load proper inital values to LCD
+
+    ld a, $91
+    ldh [$40], a
+
+    ld a, $FC
+    ldh [$45], a
+
+    ; Prepare the load address
+    ld sp, $FFFE
+    ld hl, $100
+    push hl
+
+    ; Load proper inital values to registers
+
+    ; Can't write HL directly
+    ld hl, $00B0
+    push hl
+    pop af
+
+    ld bc, $0013
+    ld de, $00D8
+    ld hl, $014D
+
+    ; Pop the return address off the stack and start running the gameLCD!
+    ret
+
+load_poll_done:

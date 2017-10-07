@@ -10,6 +10,7 @@
 #include "rcc.h"
 #include "bsp.h"
 #include "exti.h"
+#include "flash.h"
 
 #include "spi_gpio.h"
 
@@ -17,7 +18,6 @@
 #include "sd_diskio.h"
 
 struct log_data_t {
-    uint32_t write_addr;
     uint32_t raw_data;
     uint32_t fixed_addr;
 }__attribute__((packed));
@@ -26,26 +26,31 @@ struct log_data_t log_data[2048];
 
 struct log_data_t* log_ptr = log_data;
 
+struct game_entry_t {
+    char name[16];
+    uint32_t index;
+};
+
 uint8_t game_ram[0x8192] = {};
 
-void run_cycle();
+extern uint32_t* _game_rom_data;
+
+void selection_cart();
+void mbc1_cart();
 
 FATFS SDFatFs;
 FIL MyFile;
 DIR my_dir;
 FILINFO my_finfo;
-char SDPath[4];
+char SDPath[64];
 
 SD_HandleTypeDef sd_handle;
 
 int main() {
 
     int ram_idx = 0;
-
-    //HAL_Init();
-
-    //HAL_NVIC_EnableIRQ(SysTick_IRQn);
-    //__enable_irq();
+    struct game_entry_t game_table[32] = {};
+    uint32_t num_games = 0;
 
     enable_perf_clocks();
     setup_clocks();
@@ -91,12 +96,19 @@ int main() {
 
                     char* name_end = strstr(my_finfo.fname, ".GB");
                     if (name_end != NULL) {
+                        
+                        // Add game to game table
+                        strcpy(game_table[num_games].name, my_finfo.fname);
+                        game_table[num_games].index = num_games;
+
+                        // Add game to external RAM
                         uint32_t name_len = name_end - my_finfo.fname;
 
                         memcpy(&game_ram[ram_idx], my_finfo.fname, name_len);
                         game_ram[ram_idx + name_len] = 0;
                         ram_idx += name_len + 1;
                         
+                        num_games++;
                     }
 
                 }
@@ -122,9 +134,58 @@ int main() {
 
     __disable_irq();
 
-    run_cycle();
+    selection_cart();
 
-    printf("Timeout\r\n");
+    printf("Game selected!\r\n");
+
+    init_spi_gpio();
+
+    strcat(SDPath, game_table[game_ram[0]].name);
+
+    printf("Loading %s\r\n", game_table[game_ram[0]].name);
+
+    FIL fp;
+
+    if (f_open(&fp, SDPath, FA_READ) != FR_OK) {
+        printf("Error opening game at path %s\r\n", SDPath);
+        while (1);
+    }
+
+    init_flash();
+    flash_unlock();
+    flash_erase_bank2();
+
+    uint32_t* flash_addr = (uint32_t*)0x08100000;
+    uint8_t file_buffer[4096];
+    while (1) {
+        unsigned int bytes_read;
+
+        if (f_read(&fp, file_buffer, 4096, &bytes_read) != FR_OK) {
+            printf("Error reading game at path %s\r\n", SDPath);
+            break;
+        }
+
+        if (bytes_read == 0) {
+            break;
+        }
+
+        //printf("Read %u bytes\r\n", bytes_read);
+
+        uint32_t words_read;
+        words_read = (bytes_read + 3) / 4;
+
+        flash_write_data((uint32_t*)flash_addr, (uint32_t*)file_buffer, words_read);
+        flash_addr += words_read;
+    }
+
+    printf("Done loading game\r\n");
+
+    init_all_pins();
+
+    // Marker used to tell the gameboy that everything is loaded
+    game_ram[0] = 0xBE;
+
+    mbc1_cart();
 
     while(1);
 

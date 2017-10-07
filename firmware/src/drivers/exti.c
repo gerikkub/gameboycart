@@ -15,10 +15,10 @@ void enable_gb_clock_exti() {
 
 }
 
-void EXTI9_5_IRQHandler() {
-    //SEGGER_RTT_WriteString(0, "IRQ\r\n");
-    run_cycle();
+//void EXTI9_5_IRQHandler() {
+    ////SEGGER_RTT_WriteString(0, "IRQ\r\n");
+    //run_cycle();
     
-    EXTI->PR = EXTI_PR_PR5;
+    //EXTI->PR = EXTI_PR_PR5;
 
-}
+//}

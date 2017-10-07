@@ -10,7 +10,7 @@ FATFS = libraries/FatFs
 FATFS_DRIVERS = $(FATFS)/drivers
 BSP = libraries/BSP
 
-GAME = main.gb
+#GAME = Zelda.gb
 
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
@@ -30,14 +30,17 @@ SOURCES += $(SYSTEM)/startup_stm32f427xx.s \
 		   $(SYSTEM)/system_stm32f4xx.c
 
 SOURCES += $(SOURCE)/main.c \
-		   $(SOURCE)/bsp.c \
-           $(SOURCE)/run_cycle.s
+		   $(SOURCE)/bsp.c
+
+SOURCES += $(SOURCE)/carts/selection_cart.s \
+		   $(SOURCE)/carts/mbc1.s
 
 SOURCES += $(SOURCE)/drivers/rcc.c \
 		   $(SOURCE)/drivers/gpio.c \
 		   $(SOURCE)/drivers/exti.c \
 		   $(SOURCE)/drivers/spi_gpio.c \
-		   $(SOURCE)/drivers/sdio.c
+		   $(SOURCE)/drivers/sdio.c \
+		   $(SOURCE)/drivers/flash.c
 
 SOURCES += $(SOURCE)/rtt/SEGGER_RTT.c
 SOURCES += $(SOURCE)/rtt/SEGGER_RTT_printf.c
@@ -45,7 +48,10 @@ SOURCES += $(SOURCE)/rtt/rtt.c
 
 SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
-SOURCES += $(GAMES)/$(GAME)
+#SOURCES += $(GAMES)/$(GAME)
+
+SOURCES += $(GAMES)/selection.gb
+
 
 SOURCES += $(FATFS)/diskio.c \
 		   $(FATFS)/ff.c \
@@ -115,10 +121,17 @@ $(BUILDDIR)/%.o: %.s
 	mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $< -o $@
 
+$(BUILDDIR)/games/selection.o: games/selection.gb
+	echo selection
+	mkdir -p $(dir $@)
+	$(OBJCOPY) -I binary -O elf32-littlearm -B arm --redefine-sym _binary_games_selection_gb_start=selection_data --rename-section .data=.game $< $@
+
+
 $(BUILDDIR)/%.o: %.gb
 	echo $(GAME_SYM)
 	mkdir -p $(dir $@)
 	$(OBJCOPY) -I binary -O elf32-littlearm -B arm --redefine-sym $(GAME_SYM)=game_data --rename-section .data=.game $< $@
+
 
 flash: $(BIN)
 	JLinkExe -Device STM32F427VI -CommanderScript $(FLASH_SCRIPT)
