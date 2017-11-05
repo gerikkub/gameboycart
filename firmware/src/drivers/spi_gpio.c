@@ -229,6 +229,41 @@ int send_command_resp1(uint8_t command, uint32_t argument, uint8_t crc) {
     return resp;
 }
 
+int send_command_resp1_nocs(uint8_t command, uint32_t argument, uint8_t crc) {
+
+    send_command_helper(command, argument, crc);
+
+    set_data();
+
+    int sd_timeout = 60;
+    while (sd_timeout) {
+
+        spi_delay();
+
+        if (get_data() == 0) {
+            break;
+        }
+
+        set_clk();
+
+        spi_delay();
+
+        clear_clk();
+        
+        sd_timeout--;
+    }
+    
+    if (sd_timeout == 0) {
+        printf("SPI Timeout\r\n");
+        disable_cs();
+        return -1;
+    }
+
+    uint8_t resp = send_byte(0xFF);
+
+    return resp;
+}
+
 int send_command_resp3(uint8_t command, uint32_t argument, uint8_t crc, uint8_t resp[5]) {
 
     send_command_helper(command, argument, crc);
@@ -301,6 +336,46 @@ int send_command_data(uint8_t command, uint32_t argument, uint8_t crc, uint8_t b
     read_data_packet(buf);
 
     return resp;
+}
+
+int send_data(const uint8_t buf[512]) {
+
+    // Assume CS is alread enabled
+    
+    send_byte(0xFF);
+
+    uint8_t resp;
+
+    do {
+        resp = send_byte(0xFF);
+    } while (resp != 0xFF);
+
+    // Data Packet
+    send_byte(0xFE);
+
+    int i;
+    for (i = 0; i < 512; i++) {
+        send_byte(buf[i]);
+    }
+
+    // CRC
+    send_byte(0);
+    send_byte(0);
+
+    uint8_t data_resp = send_byte(0xFF);
+
+    if ((data_resp & 0x1F) != 0x5) {
+        printf("Invalid data response: %.2X\r\n", data_resp & 0x1F);
+        return -1;
+    }
+
+    do {
+        resp = send_byte(0xFF);
+    } while (resp != 0xFF);
+
+    disable_cs();
+
+    return 0;
 }
 
 int init_sd_card() {
@@ -387,4 +462,17 @@ int init_sd_card() {
 void read_sector(uint32_t sector, uint8_t buf[512]) {
     send_command_data(17, sector, 0, buf);
 }
+
+void write_sector(uint32_t sector, const uint8_t buf[512]) {
+    uint8_t resp = send_command_resp1_nocs(24, sector, 0);
+    if (resp == 0) {
+
+    } else {
+        printf("Error Writing to sd: %.2X\r\n", resp);
+        disable_cs();
+    }
+
+    send_data(buf);
+}
+
 

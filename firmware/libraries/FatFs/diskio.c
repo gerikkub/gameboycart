@@ -143,6 +143,13 @@ DRESULT disk_write (
 	UINT count        	/* Number of sectors to write */
 )
 {
+
+  while (count--) {
+    write_sector(sector, buff);
+    sector++;
+    buff += 512;
+  }
+
   return RES_OK;
 }
 #endif /* _USE_WRITE == 1 */
