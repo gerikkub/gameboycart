@@ -62,19 +62,10 @@ selection_cart:
     
 sel_run_cycle_loop:
 
-    #ldr r0, =CYCCNT
-    #ldr lr, [r0]
-
-sel_wait_clk_low:
-    ldr r0, [r12, IDROffset]
-    tst r0, $0x20
-    bne sel_wait_clk_low
-
-sel_wait_clk_high:
     # Wait while the clock is low
     ldr r0, [r12, IDROffset]
     tst r0, $0x20
-    beq sel_wait_clk_high
+    beq sel_run_cycle_loop
 
     .rept 30
     nop

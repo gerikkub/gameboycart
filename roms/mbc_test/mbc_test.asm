@@ -118,7 +118,6 @@ loop2:
     dec b
     jp nz, loop2
 
-
     ld hl, $FF47
     ld [hl], $E4
 
@@ -145,36 +144,67 @@ loop2:
     ;inc a
     ;ld [hl], a
 
-    ld a, 2
-    ld b, 0
-    call get_bank_byte
-
-    ld b, 0
-    call write_byte
-
-    ld a, 2
-    ld b, 1
-    call get_bank_byte
     
-    ld b, 3
-    call write_byte
+    ;ld a, 2
+    ;ld b, 0
+    ;call get_bank_byte
 
+    ;ld b, 0
+    ;call write_byte
 
-    ld a, 3
-    ld b, 0
-    call get_bank_byte
-
-    ld b, 32
-    call write_byte
-
-    ld a, 3
-    ld b, 1
-    call get_bank_byte
+    ;ld a, 2
+    ;ld b, 1
+    ;call get_bank_byte
     
-    ld b, 35
-    call write_byte
+    ;ld b, 3
+    ;call write_byte
 
+
+    ;ld a, 3
+    ;ld b, 0
+    ;call get_bank_byte
+
+    ;ld b, 32
+    ;call write_byte
+
+    ;ld a, 3
+    ;ld b, 1
+    ;call get_bank_byte
     
+    ;ld b, 35
+    ;call write_byte
+
+    ld h, $01
+    ld l, $00
+    ld a, $A
+    ld [hl], a
+
+
+    ld d, 0
+
+loop_read:
+
+    ld h, $A0
+    ld l, $40
+    ld b, $8E
+    ld [hl], b
+
+    ld a, d
+    sla a
+    sla a
+    sla a
+    sla a
+    sla a
+    ld b, a
+    ld a, [hl]
+    
+    call write_byte
+    
+    inc d
+
+    ld a, d
+    cp a, $8
+    jp nz, loop_read
 
 end:
     jp end

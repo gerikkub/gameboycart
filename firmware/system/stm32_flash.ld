@@ -41,7 +41,7 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     *(.glue_7)         /* glue arm to thumb code */
     *(.glue_7t)        /* glue thumb to arm code */
-    *(.game)           /* Game data */
+    *(.game_sel)           /* Game data */
 
 
 
@@ -86,7 +86,8 @@ SECTIONS
   .game_rom :
   {
     _game_rom_data = .;
-    *(.game_rom)
+    *(.game)
+    
   } >GAME_ROM
 
 

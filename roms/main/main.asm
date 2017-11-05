@@ -573,7 +573,7 @@ load_poll_vblank:
     ; Load proper inital values to registers
 
     ; Can't write HL directly
-    ld hl, $00B0
+    ld hl, $11B0
     push hl
     pop af
 

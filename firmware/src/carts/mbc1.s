@@ -62,21 +62,12 @@ mbc1_cart:
     
 run_cycle_loop:
 
-    #ldr r0, =CYCCNT
-    #ldr lr, [r0]
-
-wait_clk_low:
-    ldr r0, [r12, IDROffset]
-    tst r0, $0x20
-    bne wait_clk_low
-
-wait_clk_high:
     # Wait while the clock is low
     ldr r0, [r12, IDROffset]
     tst r0, $0x20
-    beq wait_clk_high
+    beq run_cycle_loop
 
-    .rept 32
+    .rept 30
     nop
     .endr
 
@@ -312,3 +303,6 @@ run_cycle_wr_bank_high:
 
     # Go back to the loop
     b run_cycle_loop
+
+run_cycle_done:
+    pop {r0-r12, pc}

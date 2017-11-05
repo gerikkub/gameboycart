@@ -198,7 +198,7 @@ int send_command_resp1(uint8_t command, uint32_t argument, uint8_t crc) {
 
     set_data();
 
-    int sd_timeout = 60;
+    int sd_timeout = 100;
     while (sd_timeout) {
 
         spi_delay();
