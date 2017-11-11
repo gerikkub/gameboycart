@@ -124,7 +124,7 @@ $(BUILDDIR)/%.o: %.s
 $(BUILDDIR)/games/selection.o: games/selection.gb
 	echo selection
 	mkdir -p $(dir $@)
-	$(OBJCOPY) -I binary -O elf32-littlearm -B arm --redefine-sym _binary_games_selection_gb_start=selection_data --rename-section .data=.game $< $@
+	$(OBJCOPY) -I binary -O elf32-littlearm -B arm --redefine-sym _binary_games_selection_gb_start=selection_data --rename-section .data=.game_sel $< $@
 
 
 $(BUILDDIR)/%.o: %.gb
