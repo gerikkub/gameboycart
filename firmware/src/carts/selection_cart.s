@@ -43,6 +43,9 @@
 # r10: GPIOC->IDR
 # r11: GPIOD->IDR
 # r12: GPIOE->IDR
+
+.align 16
+
 selection_cart:
     
     push {r0-r12, lr}

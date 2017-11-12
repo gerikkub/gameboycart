@@ -38,6 +38,12 @@ void setup_clocks() {
 
     HAL_RCC_ClockConfig(&clocks, FLASH_LATENCY_5);
 
+    FLASH->ACR |= FLASH_ACR_DCRST | // Reset Data cache
+                  FLASH_ACR_ICRST;  // Reset Instruction cache
+
+    FLASH->ACR |= FLASH_ACR_DCEN |  // Enable Data cache
+                  FLASH_ACR_ICEN;   // Enable Instruction cache
+                  
     //HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_5);
 
 

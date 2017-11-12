@@ -9,8 +9,10 @@ GAMES  = games
 FATFS = libraries/FatFs
 FATFS_DRIVERS = $(FATFS)/drivers
 BSP = libraries/BSP
+CARTS = src/carts
 
-#GAME = Zelda.gb
+#GAME = Tetris.gb
+#SOURCES += $(GAMES)/$(GAME)
 
 SOURCES += $(LIBRARIES)/source/stm32f4xx_hal_gpio.c \
 		   $(LIBRARIES)/source/stm32f4xx_hal_cortex.c \
@@ -30,10 +32,11 @@ SOURCES += $(SYSTEM)/startup_stm32f427xx.s \
 		   $(SYSTEM)/system_stm32f4xx.c
 
 SOURCES += $(SOURCE)/main.c \
-		   $(SOURCE)/bsp.c
+		   $(SOURCE)/bsp.c \
+		   $(SOURCE)/gb.c
 
-SOURCES += $(SOURCE)/carts/selection_cart.s \
-		   $(SOURCE)/carts/mbc1.s
+SOURCES += $(CARTS)/selection_cart.s \
+		   $(CARTS)/mbc1.s
 
 SOURCES += $(SOURCE)/drivers/rcc.c \
 		   $(SOURCE)/drivers/gpio.c \
@@ -48,8 +51,8 @@ SOURCES += $(SOURCE)/rtt/rtt.c
 
 SOURCES += $(SOURCE)/syscalls/SEGGER_RTT_Syscalls_GCC.c
 
-#SOURCES += $(GAMES)/$(GAME)
 
+#SOURCES += $(GAMES)/ram_test.gb
 SOURCES += $(GAMES)/selection.gb
 
 
@@ -74,6 +77,7 @@ INCLUDES += -I$(DEVICE)/include \
 			-I$(GAMES) \
 			-I$(FATFS) \
 			-I$(FATFS_DRIVERS) \
+			-I$(CARTS) \
 			-I.
 
 ELF = $(BUILDDIR)/program.elf
@@ -125,7 +129,6 @@ $(BUILDDIR)/games/selection.o: games/selection.gb
 	echo selection
 	mkdir -p $(dir $@)
 	$(OBJCOPY) -I binary -O elf32-littlearm -B arm --redefine-sym _binary_games_selection_gb_start=selection_data --rename-section .data=.game_sel $< $@
-
 
 $(BUILDDIR)/%.o: %.gb
 	echo $(GAME_SYM)
